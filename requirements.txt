@@ -1,4 +1,25 @@
 
+## Setting Up the Environment
+
+Follow these steps to set up the chatbot on your local machine:
+
+### 1. Set Up a Virtual Environment
+1. Navigate to your project directory:
+   ```bash
+   cd EndToEndChatbot
+2. Create a virtual environment:
+   ```bash
+   python3 -m venv venv
+3. Activate the virtual environment:
+
+For Linux/Mac:
+   ```bash
+   source venv/bin/activate
+
+For Windows:
+   ```bash
+   venv\Scripts\activate
+
 **Requirements**
 
 altair==5.3.0
