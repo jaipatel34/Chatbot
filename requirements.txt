@@ -20,6 +20,17 @@ For Windows:
    ```bash
    venv\Scripts\activate
 
+### 2. Install Dependencies
+Install the libraries required for the chatbot:
+   ```bash
+   pip install nltk scikit-learn numpy pandas streamlit requests
+
+### 3. Create requirements.txt
+Generate the requirements.txt file to capture all the installed dependencies:
+   ```bash
+   pip freeze > requirements.txt
+
+
 **Requirements**
 
 altair==5.3.0
@@ -71,3 +82,15 @@ typing_extensions==4.11.0
 tzdata==2024.1
 urllib3==2.2.1
 watchdog==4.0.0
+
+### 4. Using the Virtual Environment and requirements.txt
+To replicate the environment on another machine:
+
+Clone the repository and navigate to the project directory:
+   ```bash
+   git clone https://github.com/yourusername/EndToEndChatbot.git
+   cd EndToEndChatbot
+
+Install dependencies from requirements.txt:
+   ```bash
+   pip install -r requirements.txt
