@@ -1,4 +1,6 @@
-import os
+
+
+'''import os
 import nltk
 import ssl
 import streamlit as st
@@ -94,4 +96,98 @@ def main():
             st.stop()
 
 if __name__ == '__main__':
+    main()'''
+
+import os
+import ssl
+import random
+import requests
+import nltk
+import streamlit as st
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from nltk.tokenize import word_tokenize
+
+# Configure SSL and NLTK data path
+ssl._create_default_https_context = ssl._create_unverified_context
+nltk_data_dir = os.path.abspath("nltk_data")
+nltk.data.path.append(nltk_data_dir)
+nltk.download('punkt', download_dir=nltk_data_dir)
+
+# Define intents
+INTENTS = [
+    {"tag": "baseball", "patterns": ["What is there to know about baseball", "Who made baseball", "How do I play baseball"], 
+     "responses": ["For more information about baseball, please go to https://www.mlb.com/"]},
+    {"tag": "greeting", "patterns": ["Hi", "Hello", "Hey", "How are you", "What's up"], 
+     "responses": ["Hi there", "Hello", "Hey", "I'm fine, thank you", "Nothing much"]},
+    {"tag": "goodbye", "patterns": ["Bye", "See you later", "Goodbye", "Take care"], 
+     "responses": ["Goodbye", "See you later", "Take care"]},
+    {"tag": "thanks", "patterns": ["Thank you", "Thanks", "Thanks a lot", "I appreciate it"], 
+     "responses": ["You're welcome", "No problem", "Glad I could help"]},
+    {"tag": "about", "patterns": ["What can you do", "Who are you", "What are you", "What is your purpose"], 
+     "responses": ["I am a chatbot", "My purpose is to assist you", "I can answer questions and provide assistance"]},
+    {"tag": "help", "patterns": ["Help", "I need help", "Can you help me", "What should I do"], 
+     "responses": ["Sure, what do you need help with?", "I'm here to help. What's the problem?", "How can I assist you?"]},
+    {"tag": "age", "patterns": ["How old are you", "What's your age"], 
+     "responses": ["I don't have an age. I'm a chatbot.", "I was just born in the digital world.", "Age is just a number for me."]},
+    {"tag": "weather", "patterns": ["What's the weather like", "How's the weather today"], 
+     "responses": ["I'm sorry, I cannot provide real-time weather information.", "You can check the weather on a weather app or website."]},
+    {"tag": "budget", "patterns": ["How can I make a budget", "What's a good budgeting strategy", "How do I create a budget"], 
+     "responses": ["To make a budget, track your income and expenses.", "Use the 50/30/20 rule for budgeting.", "Start by setting financial goals."]},
+    {"tag": "credit_score", "patterns": ["What is a credit score", "How do I check my credit score", "How can I improve my credit score"], 
+     "responses": ["A credit score represents your creditworthiness.", "Check your score on Credit Karma or similar sites."]}
+]
+
+# Initialize vectorizer and classifier
+vectorizer = TfidfVectorizer()
+classifier = LogisticRegression(random_state=0, max_iter=10000)
+
+# Function to fetch external data
+def fetch_external_data(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.text
+    except requests.exceptions.RequestException as e:
+        return str(e)
+
+# Preprocess data for training
+patterns, tags = [], []
+for intent in INTENTS:
+    for pattern in intent['patterns']:
+        tokens = word_tokenize(pattern)
+        processed_pattern = " ".join(tokens)
+        patterns.append(processed_pattern)
+        tags.append(intent['tag'])
+
+# Train the model
+x_train = vectorizer.fit_transform(patterns)
+y_train = tags
+classifier.fit(x_train, y_train)
+
+# Chatbot response generator
+def generate_response(user_input):
+    input_vector = vectorizer.transform([user_input])
+    predicted_tag = classifier.predict(input_vector)[0]
+    for intent in INTENTS:
+        if intent['tag'] == predicted_tag:
+            if predicted_tag == "baseball":
+                return fetch_external_data("https://www.mlb.com/") or random.choice(intent['responses'])
+            return random.choice(intent['responses'])
+
+# Streamlit interface
+def main():
+    st.title("Chatbot")
+    st.write("Type a message below to start the conversation.")
+
+    user_input = st.text_input("You:", key="user_input")
+    if user_input:
+        response = generate_response(user_input)
+        st.text_area("Chatbot:", value=response, height=100, key="response_output")
+        
+        if response.lower() in ["goodbye", "bye"]:
+            st.write("Thank you for chatting. Have a great day!")
+            st.stop()
+
+if __name__ == "__main__":
     main()
