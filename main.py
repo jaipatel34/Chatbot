@@ -1,28 +1,18 @@
-
-
-'''import os
-import nltk
-import ssl
-import streamlit as st
-import random
-import requests
-
-
-from sklearn.feature_extraction.text import TfidfVectorizer
+import os
 from sklearn.linear_model import LogisticRegression
+import random
+import nltk
+from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.tokenize import word_tokenize
+import requests
+import streamlit as st
 
-# Set SSL context
-ssl._create_default_https_context = ssl._create_unverified_context
+data = os.path.abspath("nltk_data")
+nltk.data.path.append(data)
+nltk.download('punkt', download_dir=data)
 
-# Set NLTK data path
-nltk_data_path = os.path.abspath("nltk_data")
-nltk.data.path.append(nltk_data_path)
-nltk.download('punkt', download_dir=nltk_data_path)
-
-# Define intents
-intents = [
-    {"tag": "baseball", "patterns": ["What is there to know about baseball", "Who made baseball", "How do I play baseball"], "responses": ["For more information about baseball, please go to https://www.mlb.com/"]},
+#intents
+INTENTS = [
     {"tag": "greeting", "patterns": ["Hi", "Hello", "Hey", "How are you", "What's up"], "responses": ["Hi there", "Hello", "Hey", "I'm fine, thank you", "Nothing much"]},
     {"tag": "goodbye", "patterns": ["Bye", "See you later", "Goodbye", "Take care"], "responses": ["Goodbye", "See you later", "Take care"]},
     {"tag": "thanks", "patterns": ["Thank you", "Thanks", "Thanks a lot", "I appreciate it"], "responses": ["You're welcome", "No problem", "Glad I could help"]},
@@ -31,163 +21,68 @@ intents = [
     {"tag": "age", "patterns": ["How old are you", "What's your age"], "responses": ["I don't have an age. I'm a chatbot.", "I was just born in the digital world.", "Age is just a number for me."]},
     {"tag": "weather", "patterns": ["What's the weather like", "How's the weather today"], "responses": ["I'm sorry, I cannot provide real-time weather information.", "You can check the weather on a weather app or website."]},
     {"tag": "budget", "patterns": ["How can I make a budget", "What's a good budgeting strategy", "How do I create a budget"], "responses": ["To make a budget, start by tracking your income and expenses. Then, allocate your income towards essential expenses like rent, food, and bills. Next, allocate some of your income towards savings and debt repayment. Finally, allocate the remainder of your income towards discretionary expenses like entertainment and hobbies.", "A good budgeting strategy is to use the 50/30/20 rule. This means allocating 50% of your income towards essential expenses, 30% towards discretionary expenses, and 20% towards savings and debt repayment.", "To create a budget, start by setting financial goals for yourself. Then, track your income and expenses for a few months to get a sense of where your money is going. Next, create a budget by allocating your income towards essential expenses, savings and debt repayment, and discretionary expenses."]},
-    {"tag": "credit_score", "patterns": ["What is a credit score", "How do I check my credit score", "How can I improve my credit score"], "responses": ["A credit score is a number that represents your creditworthiness. It is based on your credit history and is used by lenders to determine whether or not to lend you money. The higher your credit score, the more likely you are to be approved for credit.", "You can check your credit score for free on several websites such as Credit Karma and Credit Sesame."]}
+    {"tag": "credit_score", "patterns": ["What is a credit score", "How do I check my credit score", "How can I improve my credit score"], "responses": ["A credit score is a number that represents your creditworthiness. It is based on your credit history and is used by lenders to determine whether or not to lend you money. The higher your credit score, the more likely you are to be approved for credit.", "You can check your credit score for free on several websites such as Credit Karma and Credit Sesame."]},
+    {"tag": "travel", "patterns": ["How can I book a flight", "What are the best travel destinations", "Where should I travel next"], "responses": ["You can book a flight using popular websites like Expedia, Google Flights, or directly on airline websites.", "Some of the best travel destinations include Paris, Tokyo, and Bali.", "Consider your interests when choosing a destination. Do you prefer beaches, mountains, or historical sites?"]},
+    {"tag": "fitness", "patterns": ["How can I lose weight", "What are the best exercises", "How do I stay fit"], "responses": ["To lose weight, focus on a balanced diet and regular exercise.", "Some of the best exercises include running, swimming, and strength training.", "Staying fit requires consistency and a mix of cardio and strength exercises."]},
+    {"tag": "technology", "patterns": ["What is AI", "Explain machine learning", "What are the latest tech trends"], "responses": ["AI stands for Artificial Intelligence, which involves machines simulating human intelligence.", "Machine learning is a subset of AI where machines learn from data.", "Some of the latest tech trends include AI advancements, 5G technology, and blockchain."]},
+    {"tag": "health", "patterns": ["How can I stay healthy", "What are the benefits of drinking water", "What is a balanced diet"], "responses": ["Staying healthy involves regular exercise, a balanced diet, and adequate sleep.", "Drinking water helps maintain bodily functions and improves skin health.", "A balanced diet includes fruits, vegetables, proteins, and healthy fats."]},
+    {"tag": "education", "patterns": ["What are the best ways to study", "How do I prepare for exams", "What are good study techniques"], "responses": ["Some of the best ways to study include active recall and spaced repetition.", "Prepare for exams by reviewing notes, practicing past papers, and staying organized.", "Good study techniques include creating summaries, using flashcards, and taking breaks."]},
+    {"tag": "sports", "patterns": ["What are the rules of soccer", "How do I start playing basketball", "What is the best sport to stay active"], "responses": ["Soccer involves two teams trying to score goals by getting the ball into the opposing team's net.", "To start playing basketball, learn the basic rules and practice dribbling and shooting.", "The best sport to stay active depends on your interests. Popular options include swimming, running, and tennis."]},
+    {"tag": "movies", "patterns": ["What are the best movies to watch", "Can you recommend a good movie", "What is your favorite movie"], "responses": ["Some of the best movies to watch include 'The Shawshank Redemption', 'Inception', and 'The Godfather'.", "Try watching a classic like 'Forrest Gump' or a recent hit like 'Dune'.", "I don't watch movies, but I can suggest some based on popular opinions!"]},
+    {"tag": "books", "patterns": ["What are the best books to read", "Can you recommend a book", "What is your favorite book"], "responses": ["Some great books include '1984' by George Orwell, 'To Kill a Mockingbird' by Harper Lee, and 'The Great Gatsby' by F. Scott Fitzgerald.", "If you like fantasy, try 'The Lord of the Rings'. If you prefer mystery, 'Gone Girl' is a great pick.", "I don't read books, but I can suggest some based on popular opinions!"]},
+    {"tag": "cooking", "patterns": ["How do I bake a cake", "What are easy dinner recipes", "How do I cook pasta"], "responses": ["To bake a cake, mix flour, sugar, eggs, and baking powder, then bake in a preheated oven.", "Some easy dinner recipes include stir-fry, pasta, and tacos.", "To cook pasta, boil water, add pasta, and cook until al dente."]},
+    {"tag": "career", "patterns": ["How do I write a resume", "What are good interview tips", "How do I choose a career path"], "responses": ["To write a resume, focus on your skills, experience, and achievements.", "Good interview tips include researching the company, practicing common questions, and dressing appropriately.", "Choosing a career path involves assessing your interests, strengths, and goals."]},
+    {"tag": "coding", "patterns": ["How do I learn Python", "What are the best coding languages", "How can I debug my code"], "responses": ["You can learn Python through online courses like Codecademy or free resources like freeCodeCamp.", "Popular coding languages include Python, JavaScript, and C++.", "To debug your code, use tools like debuggers or try printing intermediate values."]},
+    {"tag": "finance", "patterns": ["What is compound interest", "How do I invest in stocks", "What is cryptocurrency"], "responses": ["Compound interest is when interest earns on both the initial principal and the accumulated interest.", "You can invest in stocks through brokerages like Robinhood or Fidelity.", "Cryptocurrency is a digital or virtual currency secured by cryptography."]},
+    {"tag": "food", "patterns": ["What is the best dessert", "How do I make a smoothie", "What are healthy snacks"], "responses": ["The best dessert depends on your taste, but chocolate cake is a classic choice.", "To make a smoothie, blend your favorite fruits like bananas, berries, and spinach with a liquid such as almond milk or yogurt.", "Healthy snacks include nuts, fruits, veggies with hummus, or Greek yogurt with honey."]}
+
+
 ]
 
-# Create the vectorizer and classifier
+
+
+# Initialize
 vectorizer = TfidfVectorizer()
-clf = LogisticRegression(random_state=0, max_iter=10000)
+logReg = LogisticRegression(random_state=0, max_iter=10000)
 
-# Fetch data securely using SSL
-def fetch_external_data(url):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.text
-    except requests.exceptions.RequestException as e:
-        return str(e)
-
-# Preprocess the data
-tags = []
-patterns = []
-for intent in intents:
-    for pattern in intent['patterns']:
-        tags.append(intent['tag'])
-        # Tokenize using NLTK
-        tokens = word_tokenize(pattern)
-        # Join tokens back to string
-        processed_pattern = " ".join(tokens)
-        patterns.append(processed_pattern)
-
-# Training the model
-x = vectorizer.fit_transform(patterns)
-y = tags
-clf.fit(x, y)
-
-# Define the chatbot function
-def chatbot(input_text):
-    input_text = vectorizer.transform([input_text])
-    tag = clf.predict(input_text)[0]
-    for intent in intents:
-        if intent['tag'] == tag:
-            if tag == "baseball":
-                external_data = fetch_external_data("https://www.mlb.com/")
-                return external_data or random.choice(intent['responses'])
-            response = random.choice(intent['responses'])
-            return response
-
-counter = 0
-
-# Define the main function
-def main():
-    global counter
-    st.title("Chatbot")
-    st.write("Welcome to the chatbot. Please type a message and press Enter to start the conversation.")
-
-    counter += 1
-    user_input = st.text_input("You:", key=f"user_input_{counter}")
-
-    if user_input:
-        response = chatbot(user_input)
-        st.text_area("Chatbot:", value=response, height=100, max_chars=None, key=f"chatbot_response_{counter}")
-
-        if response.lower() in ['goodbye', 'bye']:
-            st.write("Thank you for chatting with me. Have a great day!")
-            st.stop()
-
-if __name__ == '__main__':
-    main()'''
-
-import os
-import ssl
-import random
-import requests
-import nltk
-import streamlit as st
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
-from nltk.tokenize import word_tokenize
-
-# Configure SSL and NLTK data path
-ssl._create_default_https_context = ssl._create_unverified_context
-nltk_data_dir = os.path.abspath("nltk_data")
-nltk.data.path.append(nltk_data_dir)
-nltk.download('punkt', download_dir=nltk_data_dir)
-
-# Define intents
-INTENTS = [
-    {"tag": "baseball", "patterns": ["What is there to know about baseball", "Who made baseball", "How do I play baseball"], 
-     "responses": ["For more information about baseball, please go to https://www.mlb.com/"]},
-    {"tag": "greeting", "patterns": ["Hi", "Hello", "Hey", "How are you", "What's up"], 
-     "responses": ["Hi there", "Hello", "Hey", "I'm fine, thank you", "Nothing much"]},
-    {"tag": "goodbye", "patterns": ["Bye", "See you later", "Goodbye", "Take care"], 
-     "responses": ["Goodbye", "See you later", "Take care"]},
-    {"tag": "thanks", "patterns": ["Thank you", "Thanks", "Thanks a lot", "I appreciate it"], 
-     "responses": ["You're welcome", "No problem", "Glad I could help"]},
-    {"tag": "about", "patterns": ["What can you do", "Who are you", "What are you", "What is your purpose"], 
-     "responses": ["I am a chatbot", "My purpose is to assist you", "I can answer questions and provide assistance"]},
-    {"tag": "help", "patterns": ["Help", "I need help", "Can you help me", "What should I do"], 
-     "responses": ["Sure, what do you need help with?", "I'm here to help. What's the problem?", "How can I assist you?"]},
-    {"tag": "age", "patterns": ["How old are you", "What's your age"], 
-     "responses": ["I don't have an age. I'm a chatbot.", "I was just born in the digital world.", "Age is just a number for me."]},
-    {"tag": "weather", "patterns": ["What's the weather like", "How's the weather today"], 
-     "responses": ["I'm sorry, I cannot provide real-time weather information.", "You can check the weather on a weather app or website."]},
-    {"tag": "budget", "patterns": ["How can I make a budget", "What's a good budgeting strategy", "How do I create a budget"], 
-     "responses": ["To make a budget, track your income and expenses.", "Use the 50/30/20 rule for budgeting.", "Start by setting financial goals."]},
-    {"tag": "credit_score", "patterns": ["What is a credit score", "How do I check my credit score", "How can I improve my credit score"], 
-     "responses": ["A credit score represents your creditworthiness.", "Check your score on Credit Karma or similar sites."]}
-]
-
-# Initialize vectorizer and classifier
-vectorizer = TfidfVectorizer()
-classifier = LogisticRegression(random_state=0, max_iter=10000)
-
-# Function to fetch external data
-def fetch_external_data(url):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.text
-    except requests.exceptions.RequestException as e:
-        return str(e)
-
-# Preprocess data for training
-patterns, tags = [], []
-for intent in INTENTS:
-    for pattern in intent['patterns']:
-        tokens = word_tokenize(pattern)
-        processed_pattern = " ".join(tokens)
-        patterns.append(processed_pattern)
-        tags.append(intent['tag'])
-
-# Train the model
-x_train = vectorizer.fit_transform(patterns)
-y_train = tags
-classifier.fit(x_train, y_train)
-
-# Chatbot response generator
-def generate_response(user_input):
-    input_vector = vectorizer.transform([user_input])
-    predicted_tag = classifier.predict(input_vector)[0]
+# Chatbot response
+def get_response(input):
+    vec = vectorizer.transform([input])
+    predict_tag = logReg.predict(vec)[0]
     for intent in INTENTS:
-        if intent['tag'] == predicted_tag:
-            if predicted_tag == "baseball":
-                return fetch_external_data("https://www.mlb.com/") or random.choice(intent['responses'])
+        if intent['tag'] == predict_tag:
             return random.choice(intent['responses'])
 
-# Streamlit interface
+# Preprocess data
+patterns, tag = [], []
+for intent in INTENTS:
+    for pat in intent['patterns']:
+        tok = word_tokenize(pat)
+        new_pattern = " ".join(tok)
+        patterns.append(new_pattern)
+        tag.append(intent['tag'])
+
+# Training
+x_train = vectorizer.fit_transform(patterns)
+y_train = tag
+logReg.fit(x_train, y_train)
+
+
+
+# Streamlit
 def main():
     st.title("Chatbot")
-    st.write("Type a message below to start the conversation.")
+    st.write("Write a message in the box below to start a conversation with the chatbot!")
+    inp = st.text_input("You:", key="user_input")
 
-    user_input = st.text_input("You:", key="user_input")
-    if user_input:
-        response = generate_response(user_input)
-        st.text_area("Chatbot:", value=response, height=100, key="response_output")
-        
-        if response.lower() in ["goodbye", "bye"]:
-            st.write("Thank you for chatting. Have a great day!")
+    if inp:
+        response = get_response(inp)
+        st.text_area("Chatbot Response:", value=response, height=75, key="response_output")
+
+        if response.lower() in ["goodbye", "bye", "bye bye"]:
+            st.write("Thank you for using this chatbot!")
             st.stop()
+
 
 if __name__ == "__main__":
     main()
