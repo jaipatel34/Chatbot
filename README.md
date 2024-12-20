@@ -1,6 +1,6 @@
-# EndToEndChatbot
+# Chatbot
 
-**EndToEndChatbot** is a fully functional chatbot system designed for efficient and scalable communication. This project integrates Natural Language Processing (NLP), Machine Learning (ML), and user-friendly interfaces to deliver contextual responses to user queries. It supports custom intent recognition, keyword-based API integration, and real-time interaction. 
+**Chatbot** is a fully functional chatbot system designed for efficient and scalable communication. This project integrates Natural Language Processing (NLP), Machine Learning (ML), and user-friendly interfaces to deliver contextual responses to user queries. It supports custom intent recognition, keyword-based API integration, and real-time interaction. 
 
 ---
 
